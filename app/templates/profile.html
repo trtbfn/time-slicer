@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile {{user.name}}{% endblock %}
+
+{% block main %}
+    
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                {% if user == None %}
+                    <p>We have not find that user :(</p>
+                {% else %}
+                    <h1>{{user.name}}</h1>
+                    <hr>
+                    <div>
+                        <p>{{user.bio}}</p>
+                    </div>
+                {% endif%}  
+            </div>
+        </div>
+    </div>
+{% endblock%}

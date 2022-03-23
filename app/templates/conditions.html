@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title%} Conditions {% endblock %}
+
+{% import 'macros/input_macros.html' as im%}
+
+{% block main %}
+    <p>That is test condition page </p>
+    <p>Passed value <span>{{ val }}</span></p>
+
+
+    <h2>Loop through a list</h2>
+    <ul>
+        {% for language in languages%}
+            <li>{{ language }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Loop through a list with index</h2>
+    <ul>
+        {% for language in languages%}
+            <li>{{loop.index}}:{{loop.index0}}:{{ language }}</li>
+        {% endfor %}
+    </ul>
+
+
+    <h2>Loop through dictionary of employees</h2>
+    <ul>
+        {% for emp_name, emp_age in employees.items() %}
+            <li>Name: {{ emp_name }}, Age: {{ emp_age }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Access to list element</h2>
+    <ul>
+        {{languages[0]}}
+    </ul>
+
+    <h2>Access to dictionary element</h2>
+    <ul>
+        {{employees['Ann']}}
+    </ul>
+
+    <h2>Access to class property</h2>
+    <ul>
+        {{person.name}}
+    </ul>
+
+    <h2>Unpack variables</h2>
+    {% set a, b = props %}
+    <ul>
+        <li>{{ a }}</li>
+        <li>{{ b }}</li>
+    </ul>
+
+    <h2>Call a function</h2>
+    <p>{{ say_out_load('JENKINS!!!', 14) }}</p>
+
+
+    <h2>Using conditions</h2>
+    {% if threshold > 60 %}
+        <p>Maybe you have been haired</p>
+    {% elif threshold > 90 %}
+        <p>You have been haired</p>
+    {% else %}
+        <p>Sorry, you couldn't pass an exam</p>
+    {% endif %}
+
+    <h2>Template filters</h2>
+    {{ languages|length}}
+
+    <h2>Template filter join</h2>
+    {{ languages|join(', ')}}
+
+    <h2>Custom filter</h2>
+    {{ date|clean_date}}
+
+    <h2>Escaping<h3>
+    {{ html_text|safe}}
+
+    <h2>js execution</h2>
+    {{ script|safe}}
+
+    <h2>Macro</h2>
+    
+    {{ im.input(label='Your name', name='name', 
+        id='name', placeholder='Please, enter your name')}}
+{% endblock %}
+
