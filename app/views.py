@@ -1,11 +1,11 @@
 
-from cgitb import html
-import email
-from webbrowser import get
+import os
 from app import app
 
-from flask import render_template, request, redirect
+from flask import render_template, request, redirect, make_response, jsonify
 from datetime import datetime
+
+from werkzeug.utils import secure_filename
 
 @app.template_filter('clean_date')
 def date_filter(dt):
@@ -13,6 +13,13 @@ def date_filter(dt):
 
 @app.route('/')
 def index() -> str:
+
+    app.config['SECRET_KEY '] = 'SDFSDJFHK332'
+
+    app.config['DB_USERNAME'] = 'root'
+
+    print(app.config['DB_USERNAME'])
+
     return render_template('index.html')
 
 @app.route('/about')
@@ -107,3 +114,97 @@ def profile(username):
         user = users[username]
 
     return render_template('profile.html', user=user)
+
+
+@app.route('/json', methods=['POST'])
+def json():
+
+    if request.is_json:
+
+        req = request.get_json()
+        
+        response = {
+            'message': 'JSON recived',
+            'name': req.get('name')
+        }
+
+        return make_response(jsonify(response)), 200
+
+    else:
+
+        return make_response(jsonify({'name': 'suck'})), 400
+
+@app.route('/guestbook')
+def guestbook():
+    return render_template('guestbook.html')
+    
+@app.route('/guestbook/create_entry', methods=['POST'])
+def create_entry():
+    
+    if request.is_json:
+
+        req = request.get_json()
+
+        print(req)
+
+        return make_response(jsonify('Message have accepted')), 200
+
+    else:
+
+        return make_response(jsonify('Something went wrong')), 400
+
+@app.route('/query')
+def query():
+    
+    print(request.query_string())
+
+    for k, v in request.args.items():
+        print(k, v)
+
+    return 'No query received', 200
+
+app.config['IMAGE_UPLOADS'] = '/home/trtbfn/code/time-slicer/app/static/img'
+app.config['ALLOWED_IMAGE_EXTENSIONS'] = ['JPG', 'PNG', 'JPEG', 'GIF']
+
+def allowed_images(filename):
+
+    if not '.' in filename:
+        return False
+
+    ext = filename.rsplit('.', 1)[1]
+    
+    if ext.upper() in app.config['ALLOWED_IMAGE_EXTENSIONS']:
+        return True
+    else: 
+        return False
+
+@app.route('/upload_image', methods=['GET', 'POST'])
+def upload_image():
+
+    if request.method == 'POST':
+        
+        if request.files:
+            image = request.files['image']
+
+            if image.filename == '':
+                print("Name shouldn't be empty")
+
+                return redirect(request.url)
+
+            elif not allowed_images(image.filename):
+                
+                print('Image type is not allowed')
+
+                return redirect(request.url)
+
+            else:
+                
+                filename =  secure_filename(image.filename)
+                image.save(os.path.join(app.config['IMAGE_UPLOADS'], filename))
+
+                print('Image saved')
+
+                return redirect(request.url)
+    
+
+    return  render_template('upload_image.html')

@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block main %}
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <h1>Guestobook</h1>
+                <hr>
+
+                <form class="mb-3" method="post">
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name" class="form-control" placeholder="Enter a name">
+                    </div>
+    
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <textarea class="form-control" id="message" name="message" cols="30" rows="8" placeholder="Enter a message"></textarea>
+                    </div>
+                    
+                    <button class="btn btn-primary" id='btn' type="none">Leave message</button>
+                </form> 
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+<script>
+    async function submit_entry() {
+        const name = document.getElementById('name'),
+              message = document.getElementById('message');
+
+        const data = {name: name.value, 
+                    message: message.value}
+
+        const res = await fetch(`${window.origin}/guestbook/create_entry`, {
+            method: 'POST',
+            mode: 'cors',
+            cache: 'no-cache',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })   
+        
+        return await res.json()
+    }
+
+    const btn = document.getElementById('btn')
+
+    btn.addEventListener('click', (e) => {
+            e.preventDefault()
+            submit_entry().then(data => console.log(data))
+    })
+</script> 
+{% endblock %}
