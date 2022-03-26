@@ -1,8 +1,12 @@
 
+from crypt import methods
+from fileinput import filename
+from http.cookies import CookieError
+from lib2to3.pgen2.pgen import DFAState
 import os
 from app import app
 
-from flask import render_template, request, redirect, make_response, jsonify
+from flask import render_template, request, redirect, make_response, jsonify, abort, send_from_directory, session, url_for
 from datetime import datetime
 
 from werkzeug.utils import secure_filename
@@ -13,8 +17,8 @@ def date_filter(dt):
 
 @app.route('/')
 def index() -> str:
-
-    app.config['SECRET_KEY '] = 'SDFSDJFHK332'
+                                                            
+    app.config['SECRET_KEY'] = 'SDFSDJFHK332'
 
     app.config['DB_USERNAME'] = 'root'
 
@@ -77,21 +81,21 @@ def conditions():
         script=script,
         html_text=html_text)
 
-@app.route('/sign-up', methods=["GET", "POST"])
-def sign_up():
+# @app.route('/sign-up', methods=["GET", "POST"])
+# def sign_up():
 
-    if request.method == "POST":
-        req = request.form
+#     if request.method == "POST":
+#         req = request.form
 
-        username = req['username']
-        email = req.get('email')
-        password = req.get('password')
+#         username = req['username']
+#         email = req.get('email')
+#         password = req.get('password')
         
         
 
-        return redirect(request.url)
+#         return redirect(request.url)
 
-    return render_template('sign-up.html')
+#     return render_template('sign-up.html')
 
 
 users = {
@@ -106,14 +110,14 @@ users = {
 }
 
 
-@app.route('/profile/<username>')
-def profile(username):
+# @app.route('/profile/<username>')
+# def profile(username):
 
-    user = None
-    if username in users: 
-        user = users[username]
+#     user = None
+#     if username in users: 
+#         user = users[username]
 
-    return render_template('profile.html', user=user)
+#     return render_template('profile.html', user=user)
 
 
 @app.route('/json', methods=['POST'])
@@ -165,6 +169,7 @@ def query():
 
 app.config['IMAGE_UPLOADS'] = '/home/trtbfn/code/time-slicer/app/static/img'
 app.config['ALLOWED_IMAGE_EXTENSIONS'] = ['JPG', 'PNG', 'JPEG', 'GIF']
+app.config['MAX_IMAGE_FILESIZE'] = 0.5 * 1024 * 1024
 
 def allowed_images(filename):
 
@@ -178,12 +183,24 @@ def allowed_images(filename):
     else: 
         return False
 
+def allowed_image_filesize(filesize):
+    
+    if int(filesize) < app.config['MAX_IMAGE_FILESIZE']: 
+        return True 
+    else:
+        return False
+
 @app.route('/upload_image', methods=['GET', 'POST'])
 def upload_image():
 
     if request.method == 'POST':
         
         if request.files:
+
+            if not allowed_image_filesize(request.cookies.get('filesize')):
+                print('File exceeded maximum size')
+                return redirect(request.url)
+
             image = request.files['image']
 
             if image.filename == '':
@@ -208,3 +225,113 @@ def upload_image():
     
 
     return  render_template('upload_image.html')
+
+
+app.config['CLIENT_IMAGES'] = '/home/trtbfn/code/time-slicer/app/static/img'
+
+@app.route('/get_image/<filename>')
+def get_image(filename):
+    
+    try:
+        return send_from_directory(app.config['CLIENT_IMAGES'], path=filename,as_attachment=False)
+    except FileNotFoundError:
+        abort(404)
+
+@app.route('/cookies')
+def cookies():
+
+    cookies = request.cookies
+    flavor = cookies.get('flavor')
+
+    print(flavor)
+    
+    res = make_response('Cookies', 200)
+    res.set_cookie('flavor',
+                    value='chocolate chip',
+                    max_age=20, 
+                    path=request.path)
+
+    return res
+
+
+users = {
+    'alexchico': {
+        'username': 'Alex Shitenko',
+        'bio': 'internship developer',
+        'password': 'root'
+    },
+    'daffna': {
+        'username': 'Daria Usefovich',
+        'bio': 'Wirter, influencer',
+        'password': 'root'
+    }
+}
+
+@app.route('/sign-in', methods=['GET', 'POST'])
+def sign_in():
+    
+    if request.method == 'POST':
+
+        req = request.form
+
+        user = req.get('username')
+        password = req.get('password')
+
+        if user in users:
+
+
+            if not password == users[user]['password']:
+                print("Password isn't correct")
+                return redirect(request.url)
+
+            else:
+                session['USERNAME'] = user
+                print('User added to session')
+                return redirect(url_for('profile'))
+        else:
+            print("User isn't contained in users db")
+            redirect(request.url)
+            
+    return render_template('sign-in.html')
+
+@app.route('/sign-out')
+def sign_out():
+    
+    session.pop('USERNAME', None)
+
+    return redirect(url_for('sign_in'))
+
+
+@app.route('/profile')
+def profile():
+    if session.get('USERNAME', None) is not None:  
+        username = session.get('USERNAME')
+        user = users[username]
+        
+        return render_template('profile.html', user=user)
+
+    else:
+        print('Username not found in session')
+        return redirect(url_for('sign-in'))
+
+from flask import flash
+
+@app.route('/sign-up', methods=["GET", "POST"])
+def sign_up():
+
+    if request.method == "POST":
+        req = request.form
+
+        username = req['username']
+        email = req.get('email')
+        password = req.get('password')
+        
+        if not len(password) >= 10:
+            flash('Password must be at least 10 characters in length', 'warning')
+            return redirect(request.url)
+
+        flash('Account have created', 'success')
+
+        return redirect(request.url)
+
+    return render_template('sign-up.html')
